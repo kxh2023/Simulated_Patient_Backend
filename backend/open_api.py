@@ -1,4 +1,5 @@
 from openai import OpenAI, AssistantEventHandler
+import time
 from typing_extensions import override
 import os
 from dotenv import load_dotenv
@@ -10,10 +11,9 @@ class AssistantClient:
         
         if not API_KEY:
             load_dotenv()
-            
-            API_KEY = os.environ.get("OPENAI_API_KEY")
+            API_KEY = os.environ.get("API_KEY")
         
-        self.client = OpenAI()
+        self.client = OpenAI(api_key=API_KEY)
         self.thread = None
         self.assistant = None
         self.message_list = []
@@ -33,8 +33,17 @@ class AssistantClient:
             model=model,
         )
         
+        print("received")
+        
         #this is a new message thread
-        self.thread = self.client.beta.assistants.create_thread()
+        self.thread = self.client.beta.threads.create()
+        
+    def retrieve_last_message(self):
+        """
+        Retrieves the latest message from the assistant.
+        """
+        messages = self.client.beta.threads.messages.list(thread_id=self.thread.id)
+        return messages[-1] if messages else None
 
     def send_message(self, message: str):
         
@@ -46,9 +55,16 @@ class AssistantClient:
             content=message,
         )
         
-        return self.parse_response(response)
+        run = self.client.beta.threads.runs.create(
+            thread_id=self.thread.id,
+            assistant_id=self.assistant.id
+        )
+        
+        print("received")
+        
+        return self.parse_response(run.id)
     
-    def parse_response(self, response):
+    def parse_response(self, run_id):
         """
         {
             "id": "msg_abc123",
@@ -75,20 +91,23 @@ class AssistantClient:
         }
 
         """
-        message_id = response.id
-        role = response.role
-        message = response.content[0].text.value
+        tries = 3
+        for i in range(tries):
+            # Fetch the run status
+            run_status = self.client.beta.threads.runs.retrieve(thread_id=self.thread.id, run_id=run_id)
+            
+            if run_status.status == "completed":
+                break  # AI response is ready
+            
+            time.sleep(1)
         
-        #self.message_list.append((role, message_id))
-        
-        return message
-
-    def retrieve_last_message(self):
-        """
-        Retrieves the latest message from the assistant.
-        """
         messages = self.client.beta.threads.messages.list(thread_id=self.thread.id)
-        return messages[-1] if messages else None
+
+        for msg in reversed(messages.data):  # Iterate from most recent
+            if msg.role == "assistant":
+                return msg.content[0].text.value  # Return AI's response
+
+    
 
     def stream_message(self, instructions: str, event_handler: AssistantEventHandler):
         #streams assistant response - better if we want voice response

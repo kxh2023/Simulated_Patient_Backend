@@ -14,6 +14,16 @@ from open_api import AssistantClient
 API_KEY = os.getenv("API_KEY")
 assistant_client = AssistantClient(API_KEY)
 
+#Helper Methods
+def get_instruction_text(instruction_key):
+
+    file_path = os.path.join("sim_patient_instructions", f"{instruction_key}.txt")
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            return file.read()
+    except FileNotFoundError:
+        return "Placeholder"
+
 @service.route('/create_patient', methods=['POST'])
 def create_patient():
     data = request.json
@@ -26,6 +36,8 @@ def create_patient():
     model = data.get('model', 'gpt-4o')
     
     assistant_client.create_patient(name, instructions, model)
+    
+    print("sent")
     return jsonify({"status": "Patient created"}), 201
 
 @service.route('/send_message', methods=['POST'])
@@ -36,14 +48,9 @@ def send_message():
     
     message = data.get('message', 'NO MESSAGE FROM FRONTEND')
     response = assistant_client.send_message(message)
+    
+    print("sent")
     return jsonify({"response": response}), 201
 
-def get_instruction_text(instruction_key):
-
-    file_path = os.path.join("sim_patient_instructions", f"{instruction_key}.txt")
-
-    try:
-        with open(file_path, 'r', encoding='utf-8') as file:
-            return file.read()
-    except FileNotFoundError:
-        return "Placeholder"
+if __name__ == "__main__":
+    service.run(debug=True) 
