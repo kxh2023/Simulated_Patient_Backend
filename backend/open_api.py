@@ -43,7 +43,7 @@ class AssistantClient:
         Retrieves the latest message from the assistant.
         """
         messages = self.client.beta.threads.messages.list(thread_id=self.thread.id)
-        return messages[-1] if messages else None
+        return messages.data[0] if messages else None
 
     def send_message(self, message: str):
         
