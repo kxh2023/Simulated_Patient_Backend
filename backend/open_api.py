@@ -13,7 +13,7 @@ class AssistantClient:
             
             API_KEY = os.environ.get("OPENAI_API_KEY")
         
-        self.client = OpenAI()
+        self.client = OpenAI(api_key=API_KEY)
         self.thread = None
         self.assistant = None
         self.message_list = []
@@ -88,7 +88,7 @@ class AssistantClient:
         Retrieves the latest message from the assistant.
         """
         messages = self.client.beta.threads.messages.list(thread_id=self.thread.id)
-        return messages[-1] if messages else None
+        return messages.data[0] if messages else None
 
     def stream_message(self, instructions: str, event_handler: AssistantEventHandler):
         #streams assistant response - better if we want voice response
@@ -117,9 +117,11 @@ class CustomEventHandler(AssistantEventHandler):
     def on_text_delta(self, delta, snapshot):
         print(delta.value, end="", flush=True)
 
+    @override
     def on_tool_call_created(self, tool_call):
         print(f"\nassistant > {tool_call.type}\n", flush=True)
 
+    @override
     def on_tool_call_delta(self, delta, snapshot):
         # Check for the code interpreter tool type events.
         if delta.type == "code_interpreter":
