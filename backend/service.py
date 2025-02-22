@@ -10,9 +10,11 @@ service = Flask(__name__)
 load_dotenv()
 
 from open_api import AssistantClient
+from tts_api import TTSClient
 
 API_KEY = os.getenv("API_KEY")
 assistant_client = AssistantClient(API_KEY)
+tts_client = TTSClient(API_KEY=API_KEY)
 
 #Helper Methods
 def get_instruction_text(instruction_key):
@@ -51,6 +53,18 @@ def send_message():
     
     print("sent")
     return jsonify({"response": response}), 201
+
+@service.route('/tts_feedback', methods=['POST'])
+def tts_feedback():
+    data = request.json
+    if 'message' not in data:
+        return jsonify({"error": "No message provided"}), 400
+    message = data.get('message', 'NO MESSAGE FROM FRONTEND')
+    tts_client.synthesize_from_text(message, "sugma.mp3")
+    #path = os.path.join(os.getcwd(), "backend", "tts_sample", "tts1.mp3")
+    path = "./backend/tts_sample/tts1.txt"
+    tts_client.synthesize_from_file(path, "ligma.mp3")
+    return jsonify({"response": "Feedback received"}), 201
 
 if __name__ == "__main__":
     service.run(debug=True) 
