@@ -59,6 +59,7 @@ class TTSClient:
         response.stream_to_file(speech_file_path)
         
         print(f"Audio has been saved to: {speech_file_path}")
+        return speech_file_path
 
     def synthesize_from_file(self, text_file_path: str, output_filename: str = "speech.mp3") -> None:
         """
@@ -74,4 +75,4 @@ class TTSClient:
         text_file_path = Path(text_file_path)
         with text_file_path.open("r", encoding="utf-8") as f:
             input_text = f.read()
-        self.synthesize_from_text(input_text, output_filename)
+        return self.synthesize_from_text(input_text, output_filename)

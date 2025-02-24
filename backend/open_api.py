@@ -46,68 +46,86 @@ class AssistantClient:
         return messages[-1] if messages else None
 
     def send_message(self, message: str):
+    # First, check if there are any active runs
+        runs = self.client.beta.threads.runs.list(thread_id=self.thread.id)
         
-        #self.message_list.append(('User', message)) - should append message id instead to save space
+        # Cancel any active runs
+        for run in runs.data:
+            if run.status in ["queued", "in_progress"]:
+                try:
+                    self.client.beta.threads.runs.cancel(
+                        thread_id=self.thread.id,
+                        run_id=run.id
+                    )
+                except Exception as e:
+                    print(f"Error cancelling run {run.id}: {e}")
+                    # Wait a moment for the run to complete naturally
+                    time.sleep(1)
         
-        response = self.client.beta.threads.messages.create(
-            thread_id=self.thread.id,
-            role="user",
-            content=message,
-        )
-        
-        run = self.client.beta.threads.runs.create(
-            thread_id=self.thread.id,
-            assistant_id=self.assistant.id
-        )
-        
-        print("received")
-        
-        return self.parse_response(run.id)
+        # Now send the new message
+        try:
+            response = self.client.beta.threads.messages.create(
+                thread_id=self.thread.id,
+                role="user",
+                content=message,
+            )
+            
+            run = self.client.beta.threads.runs.create(
+                thread_id=self.thread.id,
+                assistant_id=self.assistant.id
+            )
+            
+            return self.parse_response(run.id)
+            
+        except Exception as e:
+            print(f"Error in send_message: {e}")
+            return None
     
     def parse_response(self, run_id):
-        """
-        {
-            "id": "msg_abc123",
-            "object": "thread.message",
-            "created_at": 1699017614,
-            "assistant_id": null,
-            "thread_id": "thread_abc123",
-            "run_id": null,
-            "role": "user",
-            "content": [
-                {
-                "type": "text",
-                "text": {
-                    "value": "How does AI work? Explain it in simple terms.",
-                    "annotations": []
-                }
-                }
-            ],
-            "file_ids": [],
-            "metadata": {
-                "modified": "true",
-                "user": "abc123"
-            }
-        }
-
-        """
-        tries = 3
-        for i in range(tries):
-            # Fetch the run status
-            run_status = self.client.beta.threads.runs.retrieve(thread_id=self.thread.id, run_id=run_id)
-            
-            if run_status.status == "completed":
-                break  # AI response is ready
-            
-            time.sleep(1)
+        max_retries = 10  # Increase number of retries
+        retry_delay = 1   # Initial delay in seconds
         
-        messages = self.client.beta.threads.messages.list(thread_id=self.thread.id)
+        for i in range(max_retries):
+            try:
+                run_status = self.client.beta.threads.runs.retrieve(
+                    thread_id=self.thread.id,
+                    run_id=run_id
+                )
+                
+                if run_status.status == "completed":
+                    # Get all messages after run completion
+                    messages = self.client.beta.threads.messages.list(
+                        thread_id=self.thread.id,
+                        order="desc",  # Get newest first
+                        limit=1  # We only need the latest message
+                    )
+                    
+                    if messages.data:
+                        latest_message = messages.data[0]
+                        if latest_message.role == "assistant":
+                            return latest_message.content[0].text.value
+                    return None
+                    
+                elif run_status.status == "failed":
+                    print(f"Run failed: {run_status.last_error}")
+                    return None
+                    
+                elif run_status.status == "expired":
+                    print("Run expired")
+                    return None
+                    
+                # If still running, wait with exponential backoff
+                time.sleep(retry_delay)
+                retry_delay = min(retry_delay * 1.5, 5)  # Increase delay but cap at 5 seconds
+                
+            except Exception as e:
+                print(f"Error in parse_response: {e}")
+                time.sleep(retry_delay)
+        
+        print("Max retries reached waiting for response")
+        return None
 
-        for msg in reversed(messages.data):  # Iterate from most recent
-            if msg.role == "assistant":
-                return msg.content[0].text.value  # Return AI's response
-
-    
+        
 
     def stream_message(self, instructions: str, event_handler: AssistantEventHandler):
         #streams assistant response - better if we want voice response

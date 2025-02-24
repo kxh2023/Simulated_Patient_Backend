@@ -1,1 +1,6 @@
 .env
+
+front/node_modules
+
+backend/recordings
+backend/backend/recordings
