@@ -10,7 +10,7 @@ This project simulates patient interactions using OpenAI's Assistants API and pr
 * **Multiple Patient Support:** Handle multiple simulations simultaneously (though not implemented in current design).
 * **Backend API:**  A RESTful API manages patient creation, message handling, and TTS generation.
 
-## Usage
+## Usage - LOL DONT DO THIS BRO THIS README IS AI GENERATED WE DONT HAVE A REQUIREMENTS FILE - UR ON UR OWN GG
 1. **Backend Setup:**
     * Install dependencies: `pip install -r backend/requirements.txt`
     * Set your OpenAI API key in a `.env` file: `API_KEY=your_api_key`
