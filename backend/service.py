@@ -27,6 +27,7 @@ def get_instruction_text(instruction_key):
         with open(file_path, 'r', encoding='utf-8') as file:
             return file.read()
     except FileNotFoundError:
+        print("there is no file found")
         return "Placeholder"
 
 @service.route('/create_patient', methods=['POST'])
@@ -38,6 +39,7 @@ def create_patient():
         return jsonify({"error": "No instructions provided"}), 400
         
     instructions = get_instruction_text(instruction_key)
+    print("given instructions", instructions)
     model = data.get('model', 'gpt-4o')
     
     assistant_client.create_patient(name, instructions, model)
