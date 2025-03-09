@@ -10,7 +10,7 @@ This project simulates patient interactions using OpenAI's Assistants API and pr
 * **Multiple Patient Support:** Handle multiple simulations simultaneously (though not implemented in current design).
 * **Backend API:**  A RESTful API manages patient creation, message handling, and TTS generation.
 
-## Usage - LOL DONT DO THIS BRO THIS README IS AI GENERATED WE DONT HAVE A REQUIREMENTS FILE - UR ON UR OWN GG
+## Usage
 1. **Backend Setup:**
     * Install dependencies: `pip install -r backend/requirements.txt`
     * Set your OpenAI API key in a `.env` file: `API_KEY=your_api_key`
@@ -144,7 +144,6 @@ Patient instructions are stored as text files in the `backend/sim_patient_instru
 * **OpenAI Models:** The backend can use different OpenAI models (specified in the patient profile JSON) to alter the conversational style and capabilities of the simulated patient.  Currently, the `gpt-4o` model is used.
 * **Frontend Styling:** The frontend uses Tailwind CSS.  Customization can be done by modifying the `front/tailwind.config.js` file and associated CSS files.
 
-LOL DONT DO THIS, IT WILL FUCK YOUR COMPUTER UP
 **Backend Setup:**  Ensure that the necessary Python packages are installed (`pip install -r backend/requirements.txt`). Then, run the backend using `python backend/service.py`. The backend will listen on port 5001.
 
 **Frontend Setup:**  After installing Node modules (`npm install`), run the frontend development server (`npm run dev`). The frontend will automatically connect to the backend.
